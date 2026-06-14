@@ -80,6 +80,10 @@ def start_tcp_server():
     
     while True:
         client, addr = server.accept()
+        
+        now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        print(f"[{now}] Membuat thread baru untuk koneksi dari {addr[0]}:{addr[1]}")
+
         # Multithreading per connection
         threading.Thread(target=handle_tcp_client, args=(client, addr), daemon=True).start()
 

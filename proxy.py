@@ -9,6 +9,7 @@ PROXY_PORT = 8080
 SERVER_HOST = '127.0.0.1'
 SERVER_PORT = 8000
 CACHE_DIR = './proxy_cache'
+cache_lock = threading.Lock()
 
 # Membuat direktori cache jika belum ada
 if not os.path.exists(CACHE_DIR):
@@ -53,8 +54,9 @@ def handle_client(client_socket, client_addr):
                 
                 if response:
                     # Simpan raw response ke cache
-                    with open(cache_path, 'wb') as f:
-                        f.write(response)
+                    with cache_lock:
+                        with open(cache_path, 'wb') as f:
+                            f.write(response)
                     client_socket.sendall(response)
                     
                 elapsed = (time.time() - start_time) * 1000
