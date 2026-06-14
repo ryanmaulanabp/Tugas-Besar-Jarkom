@@ -58,12 +58,25 @@ def handle_tcp_client(client_socket, addr):
     finally:
         client_socket.close()
 
+def get_local_ip():
+    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    try:
+        # Doesn't need to be reachable
+        s.connect(('8.8.8.8', 80))
+        ip = s.getsockname()[0]
+    except Exception:
+        ip = '127.0.0.1'
+    finally:
+        s.close()
+    return ip
+
 def start_tcp_server():
     server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     server.bind(('0.0.0.0', TCP_PORT))
     server.listen(10)
     print(f"[*] TCP Web Server listening on Port {TCP_PORT} (HTTP)")
+    print(f"[*] Connect to this server using IP: {get_local_ip()}")
     
     while True:
         client, addr = server.accept()

@@ -74,16 +74,43 @@ def handle_client(client_socket, client_addr):
     finally:
         client_socket.close()
 
+def get_local_ip():
+    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    try:
+        s.connect(('8.8.8.8', 80))
+        ip = s.getsockname()[0]
+    except Exception:
+        ip = '127.0.0.1'
+    finally:
+        s.close()
+    return ip
+
 def start_proxy():
     proxy = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     proxy.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     proxy.bind(('0.0.0.0', PROXY_PORT))
     proxy.listen(20)
     print(f"[*] Proxy Server listening on Port {PROXY_PORT}")
+    print(f"[*] Proxy Local IP: {get_local_ip()}")
+    print(f"[*] Forwarding to Web Server at {SERVER_HOST}:{SERVER_PORT}")
     
     while True:
         client, addr = proxy.accept()
         threading.Thread(target=handle_client, args=(client, addr), daemon=True).start()
 
 if __name__ == "__main__":
+    import sys
+    # Usage: python proxy.py [server_host] [server_port] [proxy_port]
+    if len(sys.argv) > 1:
+        SERVER_HOST = sys.argv[1]
+    if len(sys.argv) > 2:
+        try:
+            SERVER_PORT = int(sys.argv[2])
+        except ValueError:
+            pass
+    if len(sys.argv) > 3:
+        try:
+            PROXY_PORT = int(sys.argv[3])
+        except ValueError:
+            pass
     start_proxy()
