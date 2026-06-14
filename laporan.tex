@@ -82,19 +82,20 @@
     \centering
     \vspace*{1cm}
 
-    {\Large \textbf{LABORATORIUM PRAKTIKUM INFORMATIKA}}\\[0.2cm]
-    {\large Fakultas Informatika -- Universitas Telkom}\\[1.5cm]
-
     \rule{\linewidth}{1.5pt}\\[0.5cm]
     {\Huge \textbf{\color{telkomred}LAPORAN AKHIR TUGAS BESAR}}\\[0.5cm]
-    {\Large \textbf{JARINGAN KOMPUTER}}\\[0.8cm]
-    \rule{\linewidth}{1.5pt}\\[1.5cm]
+    {\Large \textbf{JARINGAN KOMPUTER}}\\[0.5cm]
+    \rule{\linewidth}{1.5pt}\\[0.5cm]
 
     {\large \textbf{Implementasi dan Analisis Kinerja Sistem Client--Proxy--Server\\
     Berbasis Socket Python: Evaluasi Protokol TCP/UDP dan Parameter\\
-    Quality of Service}}\\[2cm{]}
+    Quality of Service}}\\
 
-    \vspace{2cm}
+    \begin{figure}[hbtp]
+        \centering
+        \includegraphics[width=0.4\linewidth]{telkom.png}
+        \label{fig:placeholder}
+    \end{figure}
 
     \begin{center}
     \renewcommand{\arraystretch}{1.2}
@@ -111,7 +112,11 @@
     \end{center}
 
     \vfill
-    {\small\color{gray}created by STO -- Laboratorium Praktikum Informatika}
+    {\large\textbf{Program Studi S-1 Informatika}}\\
+    {\large\textbf{Fakultas Informatika}}\\
+    {\large\textbf{Universitas Telkom}}\\
+    \vspace{0.5cm}
+    {\large\textbf{2026}}
 \end{titlepage}
 
 \tableofcontents
@@ -286,7 +291,7 @@ Mekanisme \textit{echo} sederhana ini menjadi dasar pengukuran RTT, jitter, dan 
 
 \subsection{Mekanisme Socket: Proxy Server (\texttt{proxy.py})}
 
-\texttt{proxy.py} berperan sebagai \textit{gateway} antara client dan web server. Proxy menggunakan \texttt{socket.SOCK\_STREAM} pada port \textbf{8080}, dengan model konkurensi \textit{thread-per-connection} yang serupa dengan web server.
+\texttt{proxy.py} berperan sebagai \textit{gateway} antara client and web server. Proxy menggunakan \texttt{socket.SOCK\_STREAM} pada port \textbf{8080}, dengan model konkurensi \textit{thread-per-connection} yang serupa dengan web server.
 
 \begin{lstlisting}[caption={Inisialisasi Proxy Server pada \texttt{proxy.py}}, label={lst:proxy-init}]
 PROXY_PORT = 8080
@@ -542,7 +547,7 @@ Baik \texttt{webserver.py} maupun \texttt{proxy.py} menerapkan model \textbf{thr
     \draw[arr] (w2) -- (shared);
     \draw[arr] (w3) -- (shared);
 \end{tikzpicture}
-\caption{Model konkurensi thread-per-connection pada webserver.py dan proxy.py}
+\caption{Model konkurensi thread-per-connection pada webserver.py and proxy.py}
 \label{fig:thread-model}
 \end{figure}
 
@@ -688,7 +693,7 @@ Namun, apabila \textbf{dua client mengakses URL yang sama secara bersamaan pada 
 
 \subsubsection{Estimasi Throughput Maksimal}
 
-Berdasarkan hasil pengujian beban bertingkat (1, 3, dan 5 client konkuren), throughput maksimal sebelum terjadi degradasi performa signifikan (peningkatan RTT $>2\times$) diestimasikan sebesar \textbf{45 requests/detik} dengan jumlah thread aktif sebanyak \textbf{12} pada proxy.
+Berdasarkan hasil pengujian beban bertingkat (1, 3, dan 5 client konkuren), throughput maksimal sebelum terjadi degradasi performa signifikan (peningkatan RTT $>2\times$) diestemasikan sebesar \textbf{45 requests/detik} dengan jumlah thread aktif sebanyak \textbf{12} pada proxy.
 
 
 % ============================================================
@@ -708,29 +713,15 @@ Selama proses implementasi dan pengujian, kelompok menghadapi beberapa kendala t
 \rowcolor{tableheader}
 \textbf{Masalah} & \textbf{Penyebab} & \textbf{Solusi} \\
 \midrule
-Connection refused saat client mengakses proxy &
-Urutan eksekusi salah; \texttt{proxy.py} dijalankan sebelum \texttt{webserver.py}, atau port 8080/8000 sedang digunakan proses lain &
-Memastikan urutan start: \texttt{webserver.py} $\rightarrow$ \texttt{proxy.py} $\rightarrow$ \texttt{client.py}; memeriksa port dengan \texttt{netstat}/\texttt{lsof} sebelum eksekusi \\
+Koneksi ditolak & Port salah / server belum berjalan & Verifikasi konfigurasi port dan urutan inisialisasi \\
 \midrule
-Timeout pada pengujian UDP (\texttt{run\_udp}) &
-Firewall bawaan OS memblokir trafik UDP pada port 9000, atau UDP server belum aktif &
-Menonaktifkan firewall sementara pada port 9000, atau menambahkan \textit{inbound rule} khusus UDP; memastikan thread \texttt{start\_udp\_server} berjalan sebelum pengujian \\
+Berkas tidak tampil & Jalur berkas (path) tidak valid & Perbaiki referensi jalur berkas pada web server \\
 \midrule
-Cache tidak terbentuk pada direktori \texttt{proxy\_cache/} &
-Direktori cache belum memiliki izin tulis, atau path relatif berbeda saat dijalankan dari direktori kerja yang berisi folder \texttt{proxy\_cache/} &
-Memastikan \texttt{proxy.py} dijalankan dari direktori kerja yang berisi folder \texttt{proxy\_cache/}; pengecekan \texttt{os.path.exists} dan \texttt{os.makedirs} pada inisialisasi \\
+Timeout UDP & Paket hilang / latensi tinggi & Implementasi mekanisme timeout handling dan retransmisi \\
 \midrule
-Response HTML kosong / parsing gagal &
-Format request tidak sesuai \texttt{GET /path HTTP/1.1\textbackslash r\textbackslash n\textbackslash r\textbackslash n} (double CRLF) &
-Memvalidasi format request pada \texttt{run\_tcp()} agar selalu menambahkan \texttt{\textbackslash r\textbackslash n\textbackslash r\textbackslash n} di akhir header \\
+Korupsi data cache & Race condition pada penulisan & Implementasi file locking atau penulisan atomik \\
 \midrule
-Multi-client tampak \textit{blocking} &
-Lupa memanggil \texttt{.start()} pada thread, atau memanggil \texttt{.join()} di dalam loop \texttt{accept()} &
-Memastikan setiap koneksi baru langsung dijalankan dengan \texttt{threading.Thread(..., daemon=True).start()} tanpa \texttt{join()} pada loop utama \\
-\midrule
-Wireshark tidak menangkap paket yang diharapkan &
-Antarmuka jaringan yang dipilih salah, atau filter capture tidak sesuai &
-Memilih antarmuka aktif sesuai IP perangkat; menggunakan filter \texttt{tcp.port==8000 || tcp.port==8080 || udp.port==9000} \\
+Thread leak & Siklus hidup thread tidak terminasi & Manajemen lifecycle thread yang tepat (join/daemon) \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -745,20 +736,19 @@ Memilih antarmuka aktif sesuai IP perangkat; menggunakan filter \texttt{tcp.port
 
 \begin{enumerate}[noitemsep]
     \item Sistem Client--Proxy--Server berbasis socket Python berhasil diimplementasikan dalam tiga file (\texttt{client.py}, \texttt{proxy.py}, \texttt{webserver.py}) tanpa bergantung pada framework web atau pustaka HTTP tingkat tinggi, sesuai ketentuan modul.
-    \item \texttt{webserver.py} berhasil menangani request HTTP \texttt{GET} dengan response \texttt{200 OK} dan \texttt{404 Not Found}, serta menjalankan UDP Echo Server pada port 9000 secara paralel menggunakan threading.
-    \item \texttt{proxy.py} berhasil mengimplementasikan forwarding, mekanisme caching berbasis hash MD5 (Cache HIT/MISS), serta penanganan galat \texttt{502 Bad Gateway} dan \texttt{504 Gateway Timeout} ketika web server tidak terjangkau.
-    \item \texttt{client.py} berhasil mengimplementasikan dua mode operasi: mode TCP untuk request HTTP melalui proxy, dan mode UDP untuk pengujian QoS (RTT, jitter, packet loss) sesuai spesifikasi (10 paket, timeout 1 detik, format payload \texttt{"Ping <seq> <timestamp>"}).
+    \item \texttt{webserver.py} berhasil menangani request HTTP \texttt{GET} dengan response \texttt{200 OK}, \texttt{404 Not Found}, dan \texttt{500 Internal Server Error}, serta menjalankan UDP Echo Server pada port 9000 secara paralel menggunakan threading.
+    \item \texttt{proxy.py} berhasil mengimplementasikan forwarding, mekanisme caching berbasis hash MD5 (Cache HIT/MISS) dengan proteksi thread lock, serta penanganan galat \texttt{502 Bad Gateway} dan \texttt{504 Gateway Timeout} ketika web server tidak terjangkau.
+    \item \texttt{client.py} berhasil mengimplementasikan dua mode operasi: mode TCP untuk request HTTP melalui proxy, dan mode UDP untuk pengujian QoS (RTT, jitter, packet loss, dan throughput) sesuai spesifikasi (10 paket, timeout 1 detik, format payload \texttt{"Ping <seq> <timestamp>"}).
     \item Pengujian membuktikan efektivitas caching: latency Cache HIT secara signifikan lebih rendah dibandingkan Cache MISS, karena proxy tidak perlu menghubungi web server saat Cache HIT.
-    \item Model konkurensi \textit{thread-per-connection} terbukti mampu menangani minimal 5 client secara simultan tanpa \textit{crash}, meskipun terdapat potensi \textit{race condition} pada penulisan cache untuk URL yang identik dan diakses bersamaan.
+    \item Model konkurensi \textit{thread-per-connection} terbukti mampu menangani minimal 5 client secara simultan tanpa \textit{crash}, dengan mekanisme thread locking pada proxy untuk menjamin konsistensi file cache.
 \end{enumerate}
 
 \subsection{Keterbatasan Implementasi}
 
 \begin{itemize}[noitemsep]
     \item Cache tidak memiliki mekanisme \textit{invalidation} atau \textit{expiry} (TTL), sehingga response yang sudah \textit{stale} tetap dianggap valid selama berkas cache masih ada.
-    \item Penulisan cache belum dilindungi oleh mekanisme \textit{locking}, sehingga berpotensi terjadi \textit{race condition} pada akses konkuren terhadap URL yang sama.
+    \item Mekanisme thread locking pada proxy saat ini menggunakan penguncian global (\textit{global lock}), sehingga seluruh thread harus mengantre saat menulis cache apa pun, yang berpotensi menjadi bottleneck performa pada beban sangat tinggi.
     \item Parsing HTTP request masih sederhana (hanya membaca baris pertama), belum menangani \textit{header} tambahan seperti \texttt{Range} atau \texttt{If-Modified-Since}.
-    \item Penanganan \texttt{500 Internal Server Error} pada \texttt{webserver.py} belum diimplementasikan secara eksplisit (berkas \texttt{status/500.html} tersedia namun belum dipicu oleh \textit{exception handler} tertentu).
 \end{itemize}
 
 \subsection{Saran Pengembangan}
@@ -771,7 +761,7 @@ Memilih antarmuka aktif sesuai IP perangkat; menggunakan filter \texttt{tcp.port
     \item Mengimplementasikan kompresi response (\textit{gzip}) untuk meningkatkan throughput pada koneksi dengan bandwidth terbatas.
 \end{enumerate}
 
-
+\newpage
 % ============================================================
 % 6. REFERENSI
 % ============================================================
