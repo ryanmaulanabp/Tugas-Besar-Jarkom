@@ -92,16 +92,7 @@
 
     {\large \textbf{Implementasi dan Analisis Kinerja Sistem Client--Proxy--Server\\
     Berbasis Socket Python: Evaluasi Protokol TCP/UDP dan Parameter\\
-    Quality of Service}}\\[2cm]
-
-    \begin{tabular}{ll}
-        \textbf{Mata Kuliah}        & : Jaringan Komputer \\[4pt]
-        \textbf{Dosen Pengampu}     & : [Nama Dosen Pengampu] \\[4pt]
-        \textbf{Program Studi}      & : S1 Informatika \\[4pt]
-        \textbf{Fakultas}           & : Informatika \\[4pt]
-        \textbf{Universitas}        & : Universitas Telkom \\[4pt]
-        \textbf{Tanggal Pengumpulan}& : 14 Juni 2026 \\
-    \end{tabular}
+    Quality of Service}}\\[2cm{]}
 
     \vspace{2cm}
 
@@ -226,6 +217,8 @@ def start_tcp_server():
 
     while True:
         client, addr = server.accept()
+        now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        print(f"[{now}] Membuat thread baru untuk koneksi dari {addr[0]}:{addr[1]}")
         # Multithreading per connection
         threading.Thread(target=handle_tcp_client, args=(client, addr), daemon=True).start()
 \end{lstlisting}
@@ -392,8 +385,9 @@ try:
         response += data
 
     if response:
-        with open(cache_path, 'wb') as f:
-            f.write(response)
+        with cache_lock:
+            with open(cache_path, 'wb') as f:
+                f.write(response)
         client_socket.sendall(response)
 
     elapsed = (time.time() - start_time) * 1000
@@ -496,7 +490,11 @@ def run_udp():
     rtts = []
     sent = 10
     lost = 0
+    total_bytes_received = 0
 
+    print(f"[*] Mengirim {sent} paket UDP (Ping QoS) ke {SERVER_HOST}:{SERVER_PORT}...\n")
+
+    start_test_time = time.time()
     for i in range(1, sent + 1):
         send_time = time.time()
         message = f"Ping {i} {send_time}"
@@ -506,15 +504,17 @@ def run_udp():
             data, addr = s.recvfrom(1024)
             recv_time = time.time()
 
+            total_bytes_received += len(data)
             rtt_ms = (recv_time - send_time) * 1000
             rtts.append(rtt_ms)
             print(f"Reply from {addr[0]}: seq={i} time={rtt_ms:.2f} ms")
         except socket.timeout:
             lost += 1
             print(f"Request timed out for seq={i}")
+    duration = time.time() - start_test_time
 \end{lstlisting}
 
-Statistik akhir (Min/Avg/Max RTT, jitter, dan packet loss) dihitung setelah seluruh 10 paket terkirim, sesuai dengan rumus pada Subbagian~\ref{subsec:rumus-qos}.
+Statistik akhir (Min/Avg/Max RTT, jitter, packet loss, dan throughput) dihitung setelah seluruh 10 paket terkirim, sesuai dengan rumus pada Subbagian~\ref{subsec:rumus-qos}.
 
 \subsection{Justifikasi Desain}
 
@@ -633,9 +633,9 @@ Beberapa faktor yang memengaruhi variasi nilai RTT, jitter, dan packet loss pada
 
 \begin{itemize}[noitemsep]
     \item \textbf{Kondisi medium jaringan:} Penggunaan WiFi cenderung menghasilkan RTT dan jitter yang lebih tinggi serta packet loss yang lebih besar dibandingkan koneksi LAN kabel, karena interferensi sinyal dan \textit{shared medium access}.
-    \item \textbf{Beban sistem (jumlah client konkuren):} Semakin banyak \textit{thread} yang aktif menangani koneksi pada proxy dan web server, semakin besar kemungkinan terjadi antrian pemrosesan (\textit{scheduling delay}) pada CPU, yang berdampak pada peningkatan RTT rata-rata.
+    \item \textbf{Beban sistem (jumlah client konkuren):} Semakin banyak \textit{thread} yang aktif menangani koneksi pada proxy and web server, semakin besar kemungkinan terjadi antrian pemrosesan (\textit{scheduling delay}) pada CPU, yang berdampak pada peningkatan RTT rata-rata.
     \item \textbf{Sifat UDP yang \textit{unreliable}:} Tidak adanya mekanisme retransmisi pada UDP echo menyebabkan paket yang hilang di jaringan langsung tercatat sebagai \textit{packet loss}, tanpa upaya pengiriman ulang.
-    \item \textbf{Sinkronisasi waktu antar perangkat:} Karena RTT dihitung dari selisih \texttt{time.time()} pada perangkat client sebelum dan sesudah \texttt{recvfrom()}, RTT yang diukur sebenarnya merepresentasikan waktu \textit{round-trip} murni (tidak bergantung pada sinkronisasi clock antar perangkat, karena pengukuran dilakukan sepenuhnya di sisi client).
+    \item \textbf{Sinkronisasi waktu antar perangkat:} Karena RTT dihitung dari selisih \texttt{time.time()} pada perangkat client sebelum dan sesudah \texttt{recvfrom()}, RTT yang diukur sebenarnya merepresentasikan waktu \textit{round-trip murni} (tidak bergantung pada sinkronisasi clock antar perangkat, karena pengukuran dilakukan sepenuhnya di sisi client).
 \end{itemize}
 
 \subsection{Studi Komparatif: Satu Client vs Multi-Client}
@@ -688,7 +688,7 @@ Namun, apabila \textbf{dua client mengakses URL yang sama secara bersamaan pada 
 
 \subsubsection{Estimasi Throughput Maksimal}
 
-Berdasarkan hasil pengujian beban bertingkat (1, 3, dan 5 client konkuren), throughput maksimal sebelum terjadi degradasi performa signifikan (peningkatan RTT $>2\times$) diestemasikan sebesar \textbf{45 requests/detik} dengan jumlah thread aktif sebanyak \textbf{12} pada proxy.
+Berdasarkan hasil pengujian beban bertingkat (1, 3, dan 5 client konkuren), throughput maksimal sebelum terjadi degradasi performa signifikan (peningkatan RTT $>2\times$) diestimasikan sebesar \textbf{45 requests/detik} dengan jumlah thread aktif sebanyak \textbf{12} pada proxy.
 
 
 % ============================================================

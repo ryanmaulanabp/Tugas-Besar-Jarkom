@@ -37,9 +37,11 @@ def run_udp():
     rtts = []
     sent = 10
     lost = 0
+    total_bytes_received = 0
     
     print(f"[*] Mengirim {sent} paket UDP (Ping QoS) ke {SERVER_HOST}:{SERVER_PORT}...\n")
     
+    start_test_time = time.time()
     for i in range(1, sent + 1):
         send_time = time.time()
         message = f"Ping {i} {send_time}"
@@ -49,12 +51,14 @@ def run_udp():
             data, addr = s.recvfrom(1024)
             recv_time = time.time()
             
+            total_bytes_received += len(data)
             rtt_ms = (recv_time - send_time) * 1000
             rtts.append(rtt_ms)
             print(f"Reply from {addr[0]}: seq={i} time={rtt_ms:.2f} ms")
         except socket.timeout:
             lost += 1
             print(f"Request timed out for seq={i}")
+    duration = time.time() - start_test_time
             
     print("\n" + "="*30)
     print("      HASIL ANALISIS QoS      ")
@@ -78,6 +82,12 @@ def run_udp():
     
     loss_pct = (lost / sent) * 100
     print(f"Packet Loss   : {loss_pct:.1f}% ({lost}/{sent} lost)")
+    
+    # Throughput (kbps) = (Total bits received) / (duration * 1000)
+    throughput_kbps = 0.0
+    if duration > 0:
+        throughput_kbps = (total_bytes_received * 8) / (duration * 1000)
+    print(f"Throughput    : {throughput_kbps:.2f} kbps")
     print("="*30)
     
     s.close()

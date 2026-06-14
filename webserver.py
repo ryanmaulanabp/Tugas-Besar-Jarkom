@@ -55,6 +55,16 @@ def handle_tcp_client(client_socket, addr):
     except Exception as e:
         now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         print(f"[{now}] TCP Error: {e}")
+        try:
+            error_path = os.path.join(WEB_ROOT, 'status', '500.html')
+            if os.path.exists(error_path):
+                with open(error_path, 'rb') as f: content = f.read()
+            else:
+                content = b"<h1>500 Internal Server Error</h1>"
+            response_header = f"HTTP/1.1 500 Internal Server Error\r\nContent-Type: text/html\r\nContent-Length: {len(content)}\r\n\r\n".encode()
+            client_socket.sendall(response_header + content)
+        except Exception:
+            pass
     finally:
         client_socket.close()
 
