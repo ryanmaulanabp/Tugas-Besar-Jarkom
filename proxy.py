@@ -53,10 +53,19 @@ def handle_client(client_socket, client_addr):
                     response += data
                 
                 if response:
-                    # Simpan raw response ke cache
-                    with cache_lock:
-                        with open(cache_path, 'wb') as f:
-                            f.write(response)
+                    # Hanya simpan ke cache jika respons berstatus 200 OK
+                    is_200 = False
+                    try:
+                        first_line_resp = response.split(b'\r\n')[0]
+                        if b"200 OK" in first_line_resp:
+                            is_200 = True
+                    except Exception:
+                        pass
+
+                    if is_200:
+                        with cache_lock:
+                            with open(cache_path, 'wb') as f:
+                                f.write(response)
                     client_socket.sendall(response)
                     
                 elapsed = (time.time() - start_time) * 1000
