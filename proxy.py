@@ -6,7 +6,7 @@ import time
 from datetime import datetime
 
 PROXY_PORT = 8080
-SERVER_HOST = '127.0.0.1'
+SERVER_HOST = '10.120.138.49'
 SERVER_PORT = 8000
 CACHE_DIR = './proxy_cache'
 cache_lock = threading.Lock()
@@ -105,6 +105,18 @@ if __name__ == "__main__":
     # Usage: python proxy.py [server_host] [server_port] [proxy_port]
     if len(sys.argv) > 1:
         SERVER_HOST = sys.argv[1]
+    else:
+        print("[!] Web Server IP (SERVER_HOST) tidak diberikan melalui argumen CLI.")
+        print(f"[*] IP Default saat ini: {SERVER_HOST}")
+        try:
+            val = input(f"Masukkan IP Web Server (Tekan Enter untuk default '{SERVER_HOST}'): ").strip()
+            if val:
+                SERVER_HOST = val
+        except (KeyboardInterrupt, SystemExit):
+            sys.exit(0)
+        except Exception:
+            pass
+
     if len(sys.argv) > 2:
         try:
             SERVER_PORT = int(sys.argv[2])

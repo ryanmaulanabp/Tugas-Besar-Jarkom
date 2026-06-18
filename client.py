@@ -98,32 +98,66 @@ if __name__ == "__main__":
     except AttributeError:
         pass
         
+    interactive = False
     if len(sys.argv) < 3 or sys.argv[1] != "--mode":
-        print("Penggunaan:")
-        print("  python client.py --mode tcp [path_url] [proxy_host] [proxy_port]")
-        print("  python client.py --mode udp [server_host] [server_port]")
-        sys.exit(1)
-        
-    mode = sys.argv[2].lower()
-    
-    if mode == "tcp":
-        path = sys.argv[3] if len(sys.argv) > 3 else "/"
-        if len(sys.argv) > 4:
-            PROXY_HOST = sys.argv[4]
-        if len(sys.argv) > 5:
-            try:
-                PROXY_PORT = int(sys.argv[5])
-            except ValueError:
-                pass
-        run_tcp(path)
-    elif mode == "udp":
-        if len(sys.argv) > 3:
-            SERVER_HOST = sys.argv[3]
-        if len(sys.argv) > 4:
-            try:
-                SERVER_PORT = int(sys.argv[4])
-            except ValueError:
-                pass
-        run_udp()
+        interactive = True
+
+    if interactive:
+        print("="*45)
+        print("      CLIENT SIMULATOR INTERACTIVE MENU")
+        print("="*45)
+        print("1. TCP Mode (Fetch Web Page via Proxy)")
+        print("2. UDP Mode (Measure QoS Latency/Jitter/Loss)")
+        try:
+            choice = input("Pilih mode (1/2): ").strip()
+            if choice == "1":
+                mode = "tcp"
+                path = input("Masukkan path URL (default '/index.html'): ").strip() or "/index.html"
+                proxy_in = input(f"Masukkan IP Proxy (default '{PROXY_HOST}'): ").strip()
+                if proxy_in: PROXY_HOST = proxy_in
+                port_in = input(f"Masukkan Port Proxy (default '{PROXY_PORT}'): ").strip()
+                if port_in:
+                    try: PROXY_PORT = int(port_in)
+                    except ValueError: pass
+                run_tcp(path)
+            elif choice == "2":
+                mode = "udp"
+                server_in = input(f"Masukkan IP Web Server (default '{SERVER_HOST}'): ").strip()
+                if server_in: SERVER_HOST = server_in
+                port_in = input(f"Masukkan Port UDP Server (default '{SERVER_PORT}'): ").strip()
+                if port_in:
+                    try: SERVER_PORT = int(port_in)
+                    except ValueError: pass
+                run_udp()
+            else:
+                print("[!] Pilihan tidak valid. Keluar.")
+                sys.exit(1)
+        except (KeyboardInterrupt, SystemExit):
+            sys.exit(0)
+        except Exception as e:
+            print(f"[!] Error: {e}")
+            sys.exit(1)
     else:
-        print("[!] Mode tidak valid. Gunakan 'tcp' atau 'udp'.")
+        mode = sys.argv[2].lower()
+        
+        if mode == "tcp":
+            path = sys.argv[3] if len(sys.argv) > 3 else "/"
+            if len(sys.argv) > 4:
+                PROXY_HOST = sys.argv[4]
+            if len(sys.argv) > 5:
+                try:
+                    PROXY_PORT = int(sys.argv[5])
+                except ValueError:
+                    pass
+            run_tcp(path)
+        elif mode == "udp":
+            if len(sys.argv) > 3:
+                SERVER_HOST = sys.argv[3]
+            if len(sys.argv) > 4:
+                try:
+                    SERVER_PORT = int(sys.argv[4])
+                except ValueError:
+                    pass
+            run_udp()
+        else:
+            print("[!] Mode tidak valid. Gunakan 'tcp' atau 'udp'.")
